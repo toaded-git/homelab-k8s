@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: dashboard
+  name: dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dashboard
+  template:
+    metadata:
+      labels:
+        app: dashboard
+    spec:
+      containers:
+      - image: 10.23.218.234:30500/homelab-dashboard:v1
+        name: homelab-dashboard
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: ssh
+          mountPath: /secrets
+        - name: data
+          mountPath: /data
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 8080
+          initialDelaySeconds: 3
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 8080
+          initialDelaySeconds: 20
+          periodSeconds: 20
+          failureThreshold: 3
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
+      volumes:
+      - name: config
+        configMap:
+          name: dashboard-config
+      - name: ssh
+        secret:
+          secretName: dashboard-ssh
+          defaultMode: 0400
+      - name: data
+        persistentVolumeClaim:
+          claimName: dashboard-data

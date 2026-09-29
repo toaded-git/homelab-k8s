@@ -1,0 +1,4 @@
+# 개인키가 들어가는 매니페스트 (Secret 은 base64 일 뿐 암호화가 아님)
+**/*secret*.yaml
+
+.DS_Store
