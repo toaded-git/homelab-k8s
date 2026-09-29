@@ -22,7 +22,6 @@ Claude 는 설명·개념 정리·공식 문서 안내·작성물 리뷰·결과
 |---|---|---|
 | 우분투 (`uuook-MS-7B89`, 192.168.45.4) | Ryzen 5 3600 (6C/12T), 32GB, GTX 1660 Super, Ubuntu 24.04 | NAS + 플랫폼 |
 | 맥미니 | — | 외부 진입점(SSH 포트포워딩), Claude Code 실행 |
-| 맥북프로 M4 16" 24GB | — | 미정 |
 
 - 맥미니 → 우분투: `ssh uuook@192.168.45.4`
 - 우분투 → VM: `multipass exec cp1 -- <cmd>` (stdin 을 먹으므로 스크립트에서 `</dev/null` 필요)
@@ -90,6 +89,8 @@ Docker 용 containerd 가 `disabled_plugins = ["cri"]` 라 CRI 를 켜고 재시
 - 비밀값(개인키가 든 Secret YAML 등)은 커밋하지 않는다. `.gitignore` 에 `platform/**/*secret*.yaml`
 - 외부 매니페스트·차트는 **버전을 박아서** 쓴다 (`--version 41.6.0`, URL 에 태그). 재현 가능해야 한다
 - 할 일은 `docs/TODO.md`, 배운 것은 `docs/til/` 에 일자별로 남긴다. 플랫폼 작업을 한 날은 해당 일자 파일을 추가한다
+- **저장소 → 클러스터 배포는 아직 수동이다** (cp1 에서 고치고 여기로 되가져옴). 자동화 스크립트를 따로 만들지 않고,
+  2026-09 넷째 주에 올릴 **ArgoCD 로 한 번에 해결하기로 했다** (사용자 결정 2026-09-29)
 
 ## NAS 층과의 경계
 

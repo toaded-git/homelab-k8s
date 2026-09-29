@@ -53,4 +53,11 @@
   - [ ] 레플리카 2 + RWO 가 실제로 어떻게 깨지는지 실험 (Pending 인지, 같은 노드로 몰리는지)
   - [ ] 레지스트리 저장소를 emptyDir → PVC 로
   - 우분투 `~/homelab-dashboard` 는 7월에 복사해둔 예전 폴더. `config/config.yaml`·`id_ed25519`·`known_hosts`·`data/`(4.8MB) 가 재료
+- [ ] **ArgoCD (이번 주 목표, 2026-09-29 결정)** — GitOps. 소스는 우분투 bare `~/git/homelab-k8s.git`
+  - 지금은 cp1 에서 매니페스트를 고치고 저장소로 되가져오는 수동 흐름. ArgoCD 가 이걸 대체한다
+  - ArgoCD 는 클러스터 안에서 git 을 **당겨간다**. 외부에서 들어오는 길(웹훅)이 필요 없다
+  - 메모리가 빠듯하면 VM 메모리를 키운다: `multipass set local.<vm>.memory=8G` (정지 상태에서만)
+  - GitHub 은 쓰지 않기로 함 (2026-09-29) — 배포 경로를 집 안에서 끝내려고. 공개는 나중에 미러링으로
 - [ ] "나만의 Railway" 설계: git 서버, 이미지 레지스트리, 빌드, 배포 흐름
+  - Gitea/Forgejo 자체 호스팅은 **필요해질 때** (웹 UI 가 아쉬워지거나 CI 가 필요해질 때). 지금은 bare 로 충분
+  - Jenkins 는 "배우려고"이지 "필요해서"가 아니다. 지금 배포 빈도로는 과하다
