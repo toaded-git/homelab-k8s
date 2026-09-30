@@ -90,6 +90,9 @@ Docker 용 containerd 가 `disabled_plugins = ["cri"]` 라 CRI 를 켜고 재시
 - 비밀값(개인키가 든 Secret YAML 등)은 커밋하지 않는다. `.gitignore` 에 `platform/**/*secret*.yaml`
 - 외부 매니페스트·차트는 **버전을 박아서** 쓴다 (`--version 41.6.0`, URL 에 태그). 재현 가능해야 한다
 - 할 일은 `docs/TODO.md`, 배운 것은 `docs/til/` 에 일자별로 남긴다. 플랫폼 작업을 한 날은 해당 일자 파일을 추가한다
+- **push 규칙** (사용자 결정 2026-09-30): 사용자가 커밋을 요청하면 Claude 가 `origin`(우분투 bare)까지 push 한다.
+  단 ArgoCD 도입 후에는 **ArgoCD 가 보는 경로(`platform/` 등)가 바뀐 커밋은 push 가 곧 배포**이므로 사용자가 push 한다.
+  문서만 바뀐 커밋은 계속 Claude 가 push. `github` remote 는 사용자가 명시적으로 요청할 때만, 민감 정보를 훑은 뒤 push
 - **저장소 → 클러스터 배포는 아직 수동이다** (cp1 에서 고치고 여기로 되가져옴). 자동화 스크립트를 따로 만들지 않고,
   2026-09 넷째 주에 올릴 **ArgoCD 로 한 번에 해결하기로 했다** (사용자 결정 2026-09-29)
 
