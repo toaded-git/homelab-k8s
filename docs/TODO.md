@@ -51,7 +51,7 @@
   - [x] 2026-09-29 동작 확인: `http://10.23.218.234:30080` HTTP 200, `/api/health` ok, 로그에 ERROR 없음
   - [x] readiness/liveness probe (`/api/health`) + 리소스 requests/limits → QoS `Burstable` (2026-09-29)
     - readiness 는 빡빡하게(3s/5s), liveness 는 느슨하게(20s/20s/3회). liveness 를 조이면 기동 중인 파드를 죽여 무한 재시작
-  - [ ] 레플리카 2 + RWO 가 실제로 어떻게 깨지는지 실험 (Pending 인지, 같은 노드로 몰리는지)
+  - [x] ~~레플리카 2 + RWO 실험~~ → 설명으로 대체 (2026-09-30, Day 6 TIL). 예상: local-path 는 PV 노드로 몰려 둘 다 뜸. 필요하면 나중에 실측
   - [x] 레지스트리 저장소 emptyDir → PVC `registry-data` 1Gi (2026-09-30). PV 는 w1. 새 PVC 는 비어 있어 `docker push` 다시 함 → 파드 삭제 후에도 `_catalog`·`tags/list` 에 `v1` 남음 확인
   - 우분투 `~/homelab-dashboard` 는 7월에 복사해둔 예전 폴더. `config/config.yaml`·`id_ed25519`·`known_hosts`·`data/`(4.8MB) 가 재료
 - [ ] **ArgoCD (이번 주 목표, 2026-09-29 결정)** — GitOps. 소스는 우분투 bare `~/git/homelab-k8s.git`
