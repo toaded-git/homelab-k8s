@@ -15,7 +15,16 @@ ssh uuook@192.168.45.4 'multipass exec cp1 -- cat /home/ubuntu/dashboard-deploy.
 ## registry/
 
 클러스터 안 이미지 레지스트리 (`registry:2`, NodePort 30500).
-저장소가 `emptyDir` 이라 파드를 다시 만들면 올려둔 이미지가 사라진다. 그땐 우분투에서 다시 push.
+저장소는 PVC `registry-data` (`/var/lib/registry`). 파드를 다시 만들어도 이미지가 남는다.
+local-path 라 PV 가 처음 뜬 노드(**w1**) 디스크에 있고, 파드도 w1 에만 뜬다. w1 이 죽으면 레지스트리도 멈춘다.
+NodePort 라 접속 주소는 어느 노드 IP 든 상관없다.
+
+적용은 **PVC 먼저, Deployment 다음.** 반대로 하면 `persistentvolumeclaim not found` 로 잠깐 스케줄링이 실패한다(곧 재시도로 붙긴 한다).
+
+```sh
+curl http://10.23.218.234:30500/v2/_catalog                     # 저장소 목록
+curl http://10.23.218.234:30500/v2/homelab-dashboard/tags/list  # 태그 목록
+```
 
 이 레지스트리를 쓰려면 양쪽에 평문 HTTP 예외가 필요하다 (이미 적용됨).
 

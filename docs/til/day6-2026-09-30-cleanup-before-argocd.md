@@ -11,6 +11,7 @@
 ## 한 일
 
 - Traefik 값 파일의 키를 `service.type` → `service.spec.type` 으로 고치고 `helm upgrade` (REVISION 2)
+- 레지스트리 저장소를 emptyDir → PVC `registry-data`. 파드를 지워도 이미지가 남는 것 확인
 
 ## Traefik: 틀린 키를 고치고, 이번엔 반영을 먼저 확인했다
 
@@ -76,3 +77,58 @@ Ingress status 로 옮겨 적을 뿐이다.** 그 값을 채우는 건 클라우
 원인은 타입이 아니라 **LB 상태를 채워 주는 주체가 없다**는 것이었다.
 채우려면 MetalLB 를 올리거나(k3s 에선 ServiceLB 가 이 역할) Traefik 에 보고할 주소를 직접 준다.
 동작에는 영향이 없어서 두었다.
+
+## 레지스트리: emptyDir → PVC
+
+바꾼 건 `volumes` 한 줄이다. `registry:2` 는 이미지를 `/var/lib/registry` 에 두는데,
+`mountPath` 는 처음부터 그 경로였다. 컨테이너 쪽은 그대로 두고 **거기에 무엇을 붙이느냐**만 바꿨다.
+
+```yaml
+volumes:
+- name: data
+  persistentVolumeClaim:        # emptyDir: {} 였던 자리
+    claimName: registry-data
+```
+
+### 적용 순서가 거꾸로였다
+
+Deployment 를 PVC 보다 먼저 올렸다.
+
+```
+Warning  FailedScheduling  0/3 nodes are available: persistentvolumeclaim "registry-data" not found
+Normal   Scheduled         Successfully assigned default/registry-... to w1
+```
+
+없는 PVC 를 가리키니 스케줄러가 못 놓다가, 몇 초 뒤 PVC 가 생기자 재시도해서 붙었다.
+쿠버네티스는 "지금 없으면 계속 다시 해 본다"는 방식이라 순서가 틀려도 결국 맞춰진다.
+그래도 Warning 이 남으니 **PVC → Deployment** 순서로 올린다. ArgoCD 에서는 sync wave 가 이 순서를 정한다.
+
+### 새 PVC 는 비어 있다
+
+바꾸는 순간 `_catalog` 가 `[]` 가 됐다. 예전 이미지는 사라진 emptyDir 에 있었으니 당연하다.
+떠 있던 대시보드 파드는 노드에 이미지가 캐시돼 있어서 영향이 없었고, 우분투에서 다시 push 했다.
+
+### 확인: 파드를 지워도 남는가
+
+```sh
+kubectl delete pod -l app=registry     # -l: 이름 대신 라벨로 고른다. 해시가 붙은 이름을 찾을 필요 없음
+curl http://10.23.218.234:30500/v2/_catalog
+# {"repositories":["homelab-dashboard"]}
+curl http://10.23.218.234:30500/v2/homelab-dashboard/tags/list
+# {"name":"homelab-dashboard","tags":["v1"]}
+```
+
+`_catalog` 는 레지스트리 API(OCI Distribution)의 저장소 목록 엔드포인트다. 레지스트리가 `/var/lib/registry` 를
+훑어서 답하므로, 파드가 바뀌어도 목록이 남아 있다면 데이터가 파드 밖에 있다는 증거가 된다.
+
+### 파드 이름의 해시로 무슨 일이 있었는지 읽기
+
+| 사건 | 파드 이름 | 의미 |
+|---|---|---|
+| apply 전 | `registry-5b6799f747-2glfq` | |
+| apply 후 | `registry-8645ff9ff5-6ppjj` | **가운데 해시가 바뀜** — 템플릿이 바뀌어 ReplicaSet 이 새로 생김 |
+| 파드 삭제 후 | `registry-8645ff9ff5-fmxz7` | 가운데 그대로, 끝만 바뀜 — 같은 ReplicaSet 이 채워 넣음 |
+
+새 파드는 **다시 w1** 에 떴다. 우연이 아니다. `WaitForFirstConsumer` 라 PV 는 파드가 처음 뜬 w1 의 디스크에
+만들어졌고, PV 에 nodeAffinity 가 붙어서 스케줄러는 w1 말고는 고를 수 없다.
+NodePort 라 접속 주소(cp1 IP)는 그대로 써도 된다. 대신 w1 이 죽으면 레지스트리도 멈춘다.

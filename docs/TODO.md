@@ -37,7 +37,7 @@
   - 매니페스트는 저장소 `platform/registry/`·`platform/dashboard/` 에 있다. cp1 `/home/ubuntu/` 사본이 아직 작업본이라 고치면 저장소로 다시 가져올 것
   - [x] git 원격: 우분투 `~/git/homelab-dashboard.git` (bare). 맥에서 push, 커밋 `f816376`. 맥/우분투 소스는 동일했음
   - [x] 우분투에서 `~/build/homelab-dashboard` 로 clone 후 `docker build -t homelab-dashboard:v1` → 23.5MB
-  - [x] 클러스터 안 레지스트리: `registry:2`, NodePort **30500**, emptyDir (파드 재생성하면 이미지 날아감 → 나중에 PVC)
+  - [x] 클러스터 안 레지스트리: `registry:2`, NodePort **30500**. 처음엔 emptyDir 였고 2026-09-30 PVC 로 바꿈
   - [x] 우분투 `/etc/docker/daemon.json` 에 `insecure-registries` + `live-restore` 추가, nvidia 런타임 유지 확인 (2026-09-29). 백업 `daemon.json.bak`
   - [x] `docker push 10.23.218.234:30500/homelab-dashboard:v1` → `_catalog` 확인
   - [x] 노드 3대 containerd `certs.d` (2026-09-29): `config.toml` 54행 `config_path = '/etc/containerd/certs.d'` + `certs.d/10.23.218.234:30500/hosts.toml`. containerd 재시작해도 실행 중 파드는 안 죽음
@@ -52,7 +52,7 @@
   - [x] readiness/liveness probe (`/api/health`) + 리소스 requests/limits → QoS `Burstable` (2026-09-29)
     - readiness 는 빡빡하게(3s/5s), liveness 는 느슨하게(20s/20s/3회). liveness 를 조이면 기동 중인 파드를 죽여 무한 재시작
   - [ ] 레플리카 2 + RWO 가 실제로 어떻게 깨지는지 실험 (Pending 인지, 같은 노드로 몰리는지)
-  - [ ] 레지스트리 저장소를 emptyDir → PVC 로
+  - [x] 레지스트리 저장소 emptyDir → PVC `registry-data` 1Gi (2026-09-30). PV 는 w1. 새 PVC 는 비어 있어 `docker push` 다시 함 → 파드 삭제 후에도 `_catalog`·`tags/list` 에 `v1` 남음 확인
   - 우분투 `~/homelab-dashboard` 는 7월에 복사해둔 예전 폴더. `config/config.yaml`·`id_ed25519`·`known_hosts`·`data/`(4.8MB) 가 재료
 - [ ] **ArgoCD (이번 주 목표, 2026-09-29 결정)** — GitOps. 소스는 우분투 bare `~/git/homelab-k8s.git`
   - 지금은 cp1 에서 매니페스트를 고치고 저장소로 되가져오는 수동 흐름. ArgoCD 가 이걸 대체한다

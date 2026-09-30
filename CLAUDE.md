@@ -61,7 +61,7 @@ Claude 는 설명·개념 정리·공식 문서 안내·작성물 리뷰·결과
 | CNI | **Calico v3.32.2** (operator), 파드 CIDR `10.244.0.0/16` |
 | 스토리지 | `local-path-provisioner` v0.0.37, StorageClass `local-path` (기본 아님, `WaitForFirstConsumer`, `reclaimPolicy: Delete`) |
 | 인그레스 | **Traefik** 차트 41.6.0 / 앱 v3.7.13, 네임스페이스 `traefik`, Service **NodePort** (HTTP **30800** · HTTPS 30843) |
-| 레지스트리 | `registry:2` NodePort **30500** (emptyDir — 파드 재생성하면 이미지 사라짐) |
+| 레지스트리 | `registry:2` NodePort **30500**, PVC `registry-data` 1Gi (local-path → PV 가 **w1** 디스크에 있어 파드도 w1 고정) |
 | 앱 | `homelab-dashboard` — Ingress `dashboard.home`, NodePort 30080 |
 
 ### 주소 대역 (겹치면 안 됨)

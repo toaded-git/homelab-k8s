@@ -33,7 +33,7 @@
                                               docker push (평문 HTTP 예외)
                                                       ▼
                           ┌─── VM 3대 (10.23.218.0/24) ────────────┐
-                          │  registry:2  NodePort 30500 (emptyDir) │
+                          │  registry:2  NodePort 30500 (PVC)      │
                           │        ▲ pull (certs.d)                │
                           │  dashboard x2  NodePort 30080          │
                           │    /config ← ConfigMap                 │

@@ -31,7 +31,7 @@
                                                          ▼
                        ┌─── VM 3대 · 10.23.218.0/24 ──────────────────┐
                        │                                             │
-                       │   registry:2        NodePort 30500          │
+                       │   registry:2        NodePort 30500 · PVC    │
                        │        ▲ pull (containerd certs.d)          │
                        │   Traefik           NodePort 30800          │
                        │        │ Host 헤더로 라우팅                  │
