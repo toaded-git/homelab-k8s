@@ -15,7 +15,7 @@
 | 쿠버네티스 | kubeadm · kubelet · kubectl **v1.37.0** |
 | 런타임 | containerd **2.2.2** (`SystemdCgroup = true`) |
 | CNI | **Calico v3.32.2**, 파드 CIDR `10.244.0.0/16` |
-| 인그레스 | **Traefik** v3.7.13 (Helm 차트 41.6.0) |
+| 인그레스 | **Traefik** v3.7.13 (Helm 차트 41.6.0), Service NodePort |
 | 스토리지 | **local-path-provisioner** v0.0.37 |
 | 레지스트리 | `registry:2` (클러스터 안, NodePort 30500) |
 
@@ -71,6 +71,7 @@ docs/
 | Day 3 | [클러스터가 서다](docs/til/day3-2026-09-18-cluster-up.md) | **Calico 기본 IP 풀이 집 LAN 과 충돌** |
 | Day 4 | [Service 를 믿지 말고 확인하기](docs/til/day4-2026-09-28-service-and-image.md) | Service 는 확률 분기 iptables 규칙 |
 | Day 5 | [사설 레지스트리와 첫 배포](docs/til/day5-2026-09-29-registry-and-deploy.md) | containerd 2.x `certs.d`, CrashLoop 진단, 인그레스 |
+| Day 6 | [ArgoCD 전에 치울 것들](docs/til/day6-2026-09-30-cleanup-before-argocd.md) | `helm upgrade` 와 dry-run, Ingress ADDRESS 가 비는 이유 |
 
 몇 가지 예:
 

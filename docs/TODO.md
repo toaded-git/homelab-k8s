@@ -29,7 +29,8 @@
   - `kubernetes/ingress-nginx` 는 2026-03 아카이브(마지막 릴리스 2026-03-19). 살아 있는 것 중 Ingress + Gateway API 를 둘 다 지원하는 Traefik 선택
   - 진입: HTTP NodePort **30800**, HTTPS **30843**. IngressClass `traefik` 가 기본값
   - 대시보드 Ingress: `dashboard.home` → Service `dashboard:8080`. `curl -H "Host: dashboard.home"` 정상, 다른 호스트는 404 확인
-  - [ ] Traefik Service 가 아직 LoadBalancer 라 EXTERNAL-IP `<pending>`. 차트 41.x 키는 `service.type` 이 아니라 **`service.spec.type`** — 값 파일 고쳐서 `helm upgrade`
+  - [x] Service LoadBalancer → **NodePort** (2026-09-30): 값 키를 `service.spec.type` 으로 고치고 `--dry-run=server` 확인 후 `helm upgrade` (REVISION 2). 포트·ClusterIP 유지, 파드 재시작 없음
+    - Ingress ADDRESS 는 여전히 빈칸 — Traefik 은 자기 Service 의 `status.loadBalancer` 를 옮겨 적을 뿐이라 NodePort 에선 채울 게 없다. 필요하면 MetalLB 또는 `ingressEndpoint`
   - [ ] Gateway API(HTTPRoute) 로도 같은 라우팅 해보기 (같은 컨트롤러로 비교 가능)
   - [ ] TLS: Secret 에 인증서 넣고 `spec.tls`, 나중에 cert-manager
 - [ ] 앱 배포 파이프라인 (진행 중) — 대상 앱 `homelab-dashboard` (Go+React, 단일 컨테이너, 8080)

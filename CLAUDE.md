@@ -60,7 +60,7 @@ Claude 는 설명·개념 정리·공식 문서 안내·작성물 리뷰·결과
 | 버전 | kubeadm·kubelet·kubectl **v1.37.0** (`apt-mark hold`), containerd **2.2.2** |
 | CNI | **Calico v3.32.2** (operator), 파드 CIDR `10.244.0.0/16` |
 | 스토리지 | `local-path-provisioner` v0.0.37, StorageClass `local-path` (기본 아님, `WaitForFirstConsumer`, `reclaimPolicy: Delete`) |
-| 인그레스 | **Traefik** 차트 41.6.0 / 앱 v3.7.13, 네임스페이스 `traefik`, HTTP NodePort **30800** |
+| 인그레스 | **Traefik** 차트 41.6.0 / 앱 v3.7.13, 네임스페이스 `traefik`, Service **NodePort** (HTTP **30800** · HTTPS 30843) |
 | 레지스트리 | `registry:2` NodePort **30500** (emptyDir — 파드 재생성하면 이미지 사라짐) |
 | 앱 | `homelab-dashboard` — Ingress `dashboard.home`, NodePort 30080 |
 
@@ -85,7 +85,8 @@ Docker 용 containerd 가 `disabled_plugins = ["cri"]` 라 CRI 를 켜고 재시
 ## 저장소 규칙
 
 - 플랫폼 매니페스트는 이 저장소 `platform/` 이 원본이다. **작업본은 cp1 `/home/ubuntu/`** 이므로,
-  거기서 고쳤으면 여기로 다시 가져온다: `multipass exec cp1 -- cat /home/ubuntu/<f>.yaml > platform/<...>/<f>.yaml`
+  거기서 고쳤으면 여기로 다시 가져온다 (맥의 저장소 루트에서):
+  `ssh uuook@192.168.45.4 'multipass exec cp1 -- cat /home/ubuntu/<f>.yaml' </dev/null > platform/<...>/<f>.yaml`
 - 비밀값(개인키가 든 Secret YAML 등)은 커밋하지 않는다. `.gitignore` 에 `platform/**/*secret*.yaml`
 - 외부 매니페스트·차트는 **버전을 박아서** 쓴다 (`--version 41.6.0`, URL 에 태그). 재현 가능해야 한다
 - 할 일은 `docs/TODO.md`, 배운 것은 `docs/til/` 에 일자별로 남긴다. 플랫폼 작업을 한 날은 해당 일자 파일을 추가한다

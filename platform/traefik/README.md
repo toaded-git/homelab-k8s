@@ -22,19 +22,30 @@ helm install traefik traefik/traefik \
 
 Ingress 리소스 YAML 은 컨트롤러가 달라도 거의 같다. 달라지는 건 어노테이션뿐.
 
-## 미해결: Service 가 아직 LoadBalancer
+## Service 타입: LoadBalancer → NodePort (2026-09-30 해결)
 
-`kubectl -n traefik get svc` 의 EXTERNAL-IP 가 `<pending>` 이다.
-맨땅 클러스터라 LoadBalancer 를 붙여 줄 것이 없기 때문. NodePort 30800 으로 접속되므로
-동작에는 지장이 없지만, Ingress 의 ADDRESS 칸도 따라서 비어 있다.
+처음 설치했을 때는 값 파일에 `service.type: NodePort` 를 넣었는데도 Service 가 `LoadBalancer`
+로 떠서 EXTERNAL-IP 가 `<pending>` 이었다. 이 차트(41.x)의 키는 `service.type` 이 아니라
+**`service.spec.type`** 이다. 없는 키를 넣어도 Helm 은 에러 없이 무시한다.
 
-원인: 이 차트(41.x)의 키는 `service.type` 이 아니라 **`service.spec.type`** 이다.
-지금 `traefik-values.yaml` 은 없는 키를 설정하고 있어서 조용히 무시된다. 고칠 때는
+`helm show values traefik/traefik --version 41.6.0` 에서 구조를 확인하고 값 파일을 고친 뒤,
+dry-run 으로 반영을 먼저 확인하고 올렸다.
 
-```yaml
-service:
-  spec:
-    type: NodePort
+```sh
+helm upgrade traefik traefik/traefik \
+  --version 41.6.0 \
+  -n traefik -f traefik-values.yaml \
+  --dry-run=server          # 출력의 Service type·nodePort 확인 후 이 줄을 빼고 실행
 ```
 
-로 바꾸고 `helm upgrade traefik traefik/traefik --version 41.6.0 -n traefik -f traefik-values.yaml`.
+결과: 릴리스 REVISION 2, Service `NodePort`, `80:30800`·`443:30843` 유지, ClusterIP 유지,
+Traefik 파드는 재시작하지 않음.
+
+### Ingress 의 ADDRESS 는 여전히 비어 있다 (정상)
+
+Traefik 은 **자기 Service 의 `status.loadBalancer`** 를 Ingress status 로 옮겨 적는다.
+그 값을 채우는 건 클라우드 LB 컨트롤러나 MetalLB 같은 것이라, 맨땅 클러스터에서는
+LoadBalancer 든 NodePort 든 빈칸이다. 타입 때문이 아니다.
+
+채우고 싶으면 MetalLB 를 올려 LoadBalancer 로 되돌리거나, Traefik 에 보고할 주소를
+직접 지정한다(`ingressEndpoint`). 동작에는 영향이 없어서 지금은 두지 않는다.

@@ -7,7 +7,9 @@ NAS 층(Docker Compose)과 섞지 않는다.
 여기 있는 파일은 **그 사본**이다. cp1 에서 고쳤으면 여기로 다시 가져올 것.
 
 ```sh
-multipass exec cp1 -- cat /home/ubuntu/dashboard-deploy.yaml > platform/dashboard/dashboard-deploy.yaml
+# 맥의 저장소 루트에서. 따옴표 밖의 > 는 맥 쪽 셸이 처리한다
+ssh uuook@192.168.45.4 'multipass exec cp1 -- cat /home/ubuntu/dashboard-deploy.yaml' </dev/null \
+  > platform/dashboard/dashboard-deploy.yaml
 ```
 
 ## registry/
