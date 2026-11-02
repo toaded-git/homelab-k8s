@@ -74,7 +74,7 @@ docs/
 | Day 4 | [Service 를 믿지 말고 확인하기](docs/til/day4-2026-09-28-service-and-image.md) | Service 는 확률 분기 iptables 규칙 |
 | Day 5 | [사설 레지스트리와 첫 배포](docs/til/day5-2026-09-29-registry-and-deploy.md) | containerd 2.x `certs.d`, CrashLoop 진단, 인그레스 |
 | Day 6 | [ArgoCD 전에 치울 것들](docs/til/day6-2026-09-30-cleanup-before-argocd.md) | `helm upgrade` 와 dry-run, 레지스트리 PVC, RWO, ArgoCD 설치 |
-| Day 7 | [한 달 만에 돌아와서](docs/til/day7-2026-11-02-argocd-login.md) | 방치된 클러스터 점검, liveness 가 죽인 repo-server, ArgoCD 로그인 |
+| Day 7 | [한 달 만에 돌아와서](docs/til/day7-2026-11-02-argocd-login.md) | 방치된 클러스터 점검, liveness 가 죽인 repo-server, ArgoCD 로그인, git 읽기 전용 SSH 키 |
 
 몇 가지 예:
 

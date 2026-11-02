@@ -60,7 +60,9 @@
     - 첫 시도는 `context canceled` 로 실패(릴리스 failed, 리소스 0) → `helm uninstall` 후 재설치
   - [x] UI 로그인 + admin 비밀번호 변경 (2026-11-02). 맥 → 우분투 터널 `-L 30443:10.23.218.234:30443`
   - [x] 초기 Secret `argocd-initial-admin-secret` 삭제 (2026-11-02)
-  - [ ] 저장소 접근 설계: `uuook@192.168.45.4` 키를 그대로 주면 파드가 NAS 호스트 셸 권한을 가짐 → 전용 키 + `authorized_keys` 제한 또는 `git-shell` 계정
+  - [x] 저장소 접근 (2026-11-02): 전용 키 `~/argocd-repo-key`(우분투) + `authorized_keys` 에 `restrict,from="10.23.218.0/24",command="git-upload-pack <repo>"`. 읽기만 되고 셸·push·VM 밖 접속 거부 확인
+    - 읽을 저장소가 늘면 Gitea·Forgejo 의 저장소별 deploy key 로
+  - [ ] ArgoCD 에 저장소 등록 (UI) — URL·개인키·**호스트 키(known_hosts)**
   - [ ] 첫 Application: `platform/dashboard/` → sync → git 수정으로 반영 확인
   - [ ] 관찰: `argocd-repo-server` liveness 실패로 8회 재시작 (마지막 10-23). 재발하면 probe 타임아웃 조정
   - [ ] Traefik Ingress (`argocd.home`) 로 바꾸기 — `configs.params."server.insecure"` 필요
