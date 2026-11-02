@@ -73,4 +73,11 @@ jsonpath 따옴표가 여러 겹이 돼서 헷갈린다.
 ### 로그인 후
 
 UI 의 User Info 에서 비밀번호 변경. 바뀐 건 `argocd-secret` 의 `admin.passwordMtime` 으로 확인된다.
-초기 Secret 은 이제 필요 없고, 남겨 두면 Secret 을 읽을 수 있는 누구나 admin 비밀번호를 알게 되므로 지운다.
+초기 Secret 은 이제 필요 없고, 남겨 두면 Secret 을 읽을 수 있는 누구나 admin 비밀번호를 알게 되므로 지웠다.
+
+```sh
+kubectl -n argocd delete secret argocd-initial-admin-secret
+```
+
+남은 Secret 중 `sh.helm.release.v1.argocd.v1` 은 **Helm 이 릴리스 기록을 저장하는 곳**이다. `helm list`·`helm history` 가
+읽는 게 이것이고, `upgrade` 할 때마다 `v2`, `v3` 이 쌓인다. Helm 에는 별도 DB 가 없다.

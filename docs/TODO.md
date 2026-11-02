@@ -59,7 +59,7 @@
     - `server.service` NodePort 30880/30443 (기본 30080 은 대시보드와 충돌), `dex.enabled: false`, redis-ha 는 기본값(꺼짐)
     - 첫 시도는 `context canceled` 로 실패(릴리스 failed, 리소스 0) → `helm uninstall` 후 재설치
   - [x] UI 로그인 + admin 비밀번호 변경 (2026-11-02). 맥 → 우분투 터널 `-L 30443:10.23.218.234:30443`
-  - [ ] 초기 Secret `argocd-initial-admin-secret` 삭제 (비밀번호 바꿨으니 필요 없음)
+  - [x] 초기 Secret `argocd-initial-admin-secret` 삭제 (2026-11-02)
   - [ ] 저장소 접근 설계: `uuook@192.168.45.4` 키를 그대로 주면 파드가 NAS 호스트 셸 권한을 가짐 → 전용 키 + `authorized_keys` 제한 또는 `git-shell` 계정
   - [ ] 첫 Application: `platform/dashboard/` → sync → git 수정으로 반영 확인
   - [ ] 관찰: `argocd-repo-server` liveness 실패로 8회 재시작 (마지막 10-23). 재발하면 probe 타임아웃 조정
