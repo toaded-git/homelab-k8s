@@ -54,7 +54,16 @@
   - [x] ~~레플리카 2 + RWO 실험~~ → 설명으로 대체 (2026-09-30, Day 6 TIL). 예상: local-path 는 PV 노드로 몰려 둘 다 뜸. 필요하면 나중에 실측
   - [x] 레지스트리 저장소 emptyDir → PVC `registry-data` 1Gi (2026-09-30). PV 는 w1. 새 PVC 는 비어 있어 `docker push` 다시 함 → 파드 삭제 후에도 `_catalog`·`tags/list` 에 `v1` 남음 확인
   - 우분투 `~/homelab-dashboard` 는 7월에 복사해둔 예전 폴더. `config/config.yaml`·`id_ed25519`·`known_hosts`·`data/`(4.8MB) 가 재료
-- [ ] **ArgoCD (이번 주 목표, 2026-09-29 결정)** — GitOps. 소스는 우분투 bare `~/git/homelab-k8s.git`
+- [ ] **ArgoCD (2026-09-29 결정)** — GitOps. 소스는 우분투 bare `~/git/homelab-k8s.git`
+  - [x] 설치 (2026-09-30): Helm 차트 `argo-cd/argo-cd` **10.9.4** (앱 v3.5.3), 릴리스·네임스페이스 `argocd`, 값 `platform/argocd/argocd-values.yaml`
+    - `server.service` NodePort 30880/30443 (기본 30080 은 대시보드와 충돌), `dex.enabled: false`, redis-ha 는 기본값(꺼짐)
+    - 첫 시도는 `context canceled` 로 실패(릴리스 failed, 리소스 0) → `helm uninstall` 후 재설치
+  - [x] UI 로그인 + admin 비밀번호 변경 (2026-11-02). 맥 → 우분투 터널 `-L 30443:10.23.218.234:30443`
+  - [ ] 초기 Secret `argocd-initial-admin-secret` 삭제 (비밀번호 바꿨으니 필요 없음)
+  - [ ] 저장소 접근 설계: `uuook@192.168.45.4` 키를 그대로 주면 파드가 NAS 호스트 셸 권한을 가짐 → 전용 키 + `authorized_keys` 제한 또는 `git-shell` 계정
+  - [ ] 첫 Application: `platform/dashboard/` → sync → git 수정으로 반영 확인
+  - [ ] 관찰: `argocd-repo-server` liveness 실패로 8회 재시작 (마지막 10-23). 재발하면 probe 타임아웃 조정
+  - [ ] Traefik Ingress (`argocd.home`) 로 바꾸기 — `configs.params."server.insecure"` 필요
   - 지금은 cp1 에서 매니페스트를 고치고 저장소로 되가져오는 수동 흐름. ArgoCD 가 이걸 대체한다
   - ArgoCD 는 클러스터 안에서 git 을 **당겨간다**. 외부에서 들어오는 길(웹훅)이 필요 없다
   - 메모리가 빠듯하면 VM 메모리를 키운다: `multipass set local.<vm>.memory=8G` (정지 상태에서만)

@@ -1,0 +1,8 @@
+server:
+  service:
+    type: NodePort
+    nodePortHttp: 30880
+    nodePortHttps: 30443
+
+dex:
+  enabled: false

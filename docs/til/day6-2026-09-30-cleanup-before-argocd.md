@@ -12,6 +12,7 @@
 
 - Traefik 값 파일의 키를 `service.type` → `service.spec.type` 으로 고치고 `helm upgrade` (REVISION 2)
 - 레지스트리 저장소를 emptyDir → PVC `registry-data`. 파드를 지워도 이미지가 남는 것 확인
+- (저녁) ArgoCD 를 Helm 으로 설치 — 차트 10.9.4 / v3.5.3, NodePort 30443, Dex 끔
 
 ## Traefik: 틀린 키를 고치고, 이번엔 반영을 먼저 확인했다
 
@@ -173,4 +174,81 @@ w1·w2 에 나뉜 파드가 **같은 RWO 볼륨을 같이 보는 일은 없다.*
 ```
 
 대시보드는 `/data` 에 로컬 파일을 쓰므로 지금 구조에선 레플리카 1 이 맞다.
+
+## ArgoCD 설치 (저녁)
+
+### `helm repo add` 에는 소스 저장소가 아니라 차트 저장소를
+
+처음엔 `helm repo add argoCD https://github.com/argoproj/argo-cd` 로 시작하려 했다. 그건 **소스 코드 저장소**다.
+Helm 저장소에는 `index.yaml`(차트 목록)이 있어야 한다. Maven 저장소의 `maven-metadata.xml` 같은 것.
+
+| 주소 | `index.yaml` |
+|---|---|
+| `github.com/argoproj/argo-cd` | 404 |
+| `argoproj.github.io/argo-helm` | 200 |
+
+Traefik 도 소스는 `github.com/traefik/traefik`, 차트는 `traefik.github.io/charts` 였다.
+
+### 차트 버전 ≠ 앱 버전
+
+```
+NAME              CHART VERSION   APP VERSION
+argo-cd/argo-cd   10.9.4          v3.5.3
+```
+
+`--version` 에는 차트 버전. 차트의 `kubeVersion: '>=1.25.0-0'` 은 하한선일 뿐 1.37 에서 테스트됐다는 뜻은 아니다.
+
+### values 는 외우는 게 아니라 찾아 읽는 것
+
+Traefik 값 파일을 그대로 가져다 쓰려다 막혔다. `kubectl explain` 은 **쿠버네티스 API 스키마**라 어디서나 같지만,
+`helm show values` 는 **차트 작성자가 만든 설정 인터페이스**라 차트마다 다르다. Spring 의 `server.port` 가
+다른 프레임워크에선 다른 이름인 것과 같다.
+
+읽는 요령:
+
+```sh
+helm show values argo-cd/argo-cd --version 10.9.4 | grep -nE '^[a-zA-Z-]+:'   # 최상위 키만
+```
+
+ArgoCD 차트의 최상위 키는 대부분 **구성 요소 하나씩**이다 — `controller`(상태 비교·동기화), `repoServer`(git clone·렌더링),
+`server`(API·UI), `dex`(SSO), `redis`/`redis-ha`(캐시). 나머지(`global`, `configs`, `crds`)는 공통 설정.
+들여쓰기를 점으로 이으면 키의 주소가 된다: `server → service → type` = `server.service.type`.
+**값 파일에는 기본값과 다른 것만 적는다.**
+
+솔직히 이 단계는 감이 안 와서 값 파일을 설명 듣고 받아 적었다. 결과는 여섯 줄이었다.
+
+```yaml
+server:
+  service:
+    type: NodePort
+    nodePortHttp: 30880   # 기본 30080 이 대시보드 NodePort 와 충돌
+    nodePortHttps: 30443
+dex:
+  enabled: false          # SSO 안 씀
+```
+
+**기본값이 내 클러스터와 충돌하는 지점**이 또 나왔다. 그대로 설치했으면 `provided port is already allocated`.
+
+### 첫 설치가 `context canceled` 로 실패
+
+```
+STATUS: failed
+DESCRIPTION: Release "argocd" failed: context canceled
+```
+
+Helm 클라이언트가 도중에 취소 신호를 받은 것(Ctrl+C, 세션 끊김 등). CRD 조차 없어서 아무것도 올라가기 전에 끊겼다.
+실패 기록이 남아 같은 이름으로 `install` 이 안 되므로 `helm uninstall` 후 재설치. 설치는 1~2분 걸리니 기다릴 것.
+
+또 하나 — `kubectl get pods` 에 안 보인 건 `-n argocd` 를 빼서다. 기본은 `default` 네임스페이스.
+
+### 결과
+
+| | |
+|---|---|
+| 파드 | 6개 Running (application-controller, applicationset-controller, notifications, redis, repo-server, server). Dex 없음 |
+| `argocd-server` | NodePort `80:30880`, `443:30443`. http 는 https 로 307 |
+| CRD | `applications`, `applicationsets`, `appprojects` `.argoproj.io` |
+
+`argocd-application-controller-0` 만 해시 대신 `-0` 이 붙는다. **StatefulSet** 이라서. 여러 개 띄우면 번호별로
+담당 클러스터를 나누는 구조라 순번 이름이 필요하다.
 

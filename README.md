@@ -18,6 +18,7 @@
 | 인그레스 | **Traefik** v3.7.13 (Helm 차트 41.6.0), Service NodePort |
 | 스토리지 | **local-path-provisioner** v0.0.37 |
 | 레지스트리 | `registry:2` (클러스터 안, NodePort 30500) |
+| GitOps | **ArgoCD** v3.5.3 (Helm 차트 10.9.4) — 설치까지, 저장소 연결 전 |
 
 같은 기계에서 NAS(Jellyfin·Samba·Immich·restic·Uptime Kuma)가 Docker Compose 로 돈다.
 **두 층은 서로 의존하지 않는다.** 클러스터를 부수고 다시 세워도 NAS 는 영향을 받지 않는다.
@@ -51,6 +52,7 @@
 platform/
 ├── registry/       클러스터 안 이미지 레지스트리
 ├── traefik/        인그레스 컨트롤러 (Helm values)
+├── argocd/         GitOps 컨트롤러 (Helm values)
 ├── storage/        local-path-provisioner
 └── dashboard/      직접 만든 앱 — Deployment · Service · Ingress · PVC
 docs/
@@ -71,7 +73,8 @@ docs/
 | Day 3 | [클러스터가 서다](docs/til/day3-2026-09-18-cluster-up.md) | **Calico 기본 IP 풀이 집 LAN 과 충돌** |
 | Day 4 | [Service 를 믿지 말고 확인하기](docs/til/day4-2026-09-28-service-and-image.md) | Service 는 확률 분기 iptables 규칙 |
 | Day 5 | [사설 레지스트리와 첫 배포](docs/til/day5-2026-09-29-registry-and-deploy.md) | containerd 2.x `certs.d`, CrashLoop 진단, 인그레스 |
-| Day 6 | [ArgoCD 전에 치울 것들](docs/til/day6-2026-09-30-cleanup-before-argocd.md) | `helm upgrade` 와 dry-run, Ingress ADDRESS 가 비는 이유 |
+| Day 6 | [ArgoCD 전에 치울 것들](docs/til/day6-2026-09-30-cleanup-before-argocd.md) | `helm upgrade` 와 dry-run, 레지스트리 PVC, RWO, ArgoCD 설치 |
+| Day 7 | [한 달 만에 돌아와서](docs/til/day7-2026-11-02-argocd-login.md) | 방치된 클러스터 점검, liveness 가 죽인 repo-server, ArgoCD 로그인 |
 
 몇 가지 예:
 

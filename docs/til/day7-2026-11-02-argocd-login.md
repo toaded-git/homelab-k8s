@@ -1,0 +1,76 @@
+# Day 7 (2026-11-02) — 한 달 만에 돌아와서
+
+← [Day 6](day6-2026-09-30-cleanup-before-argocd.md) · [목차](README.md)
+
+9/30 에 ArgoCD 를 설치하고 한 달 넘게 손을 안 댔다. 그 사이 클러스터에 무슨 일이 있었는지부터 봤다.
+
+## 한 일
+
+- 방치된 클러스터 점검 (읽기 전용)
+- ArgoCD UI 로그인 — 밖에서 SSH 점프 + 터널
+- admin 비밀번호 변경
+
+## 방치된 클러스터 점검
+
+노드 3대 Ready, ArgoCD 파드 6개 Running, UI 200. 겉보기엔 멀쩡했다. 그런데 재시작 횟수가 이상했다.
+
+```
+argocd-application-controller-0   Running   1 (17d ago)
+argocd-repo-server-...            Running   8 (9d ago)
+```
+
+### 1. VM 이 통째로 재시작돼 있었다
+
+우분투 본체 `uptime` 35일, VM `w1` 은 17일. **호스트는 그대로인데 VM 만 10월 중순에 재시작됐다.**
+거의 모든 파드의 재시작이 1 인 이유. 클러스터는 9/27 호스트 재부팅 때처럼 알아서 복구됐다.
+원인(multipass 데몬 재시작, snap 자동 갱신 등)은 아직 확인 안 함.
+
+### 2. repo-server 는 liveness 가 죽였다
+
+```sh
+kubectl get pod <repo-server> -o jsonpath='{.status.containerStatuses[0].lastState}'
+# {"terminated":{"exitCode":0,"reason":"Completed", ...}}
+kubectl logs <repo-server> --previous
+```
+
+```
+level=error msg="Error serving health check request" duration=5.000s error="context canceled"
+level=error msg="Error serving health check request" duration=5.002s error="context canceled"
+level=info  msg="got signal terminated, attempting graceful shutdown"
+```
+
+헬스 체크가 5초 타임아웃 안에 답을 못 했고, liveness 실패가 쌓이자 kubelet 이 SIGTERM 을 보냈다.
+**OOMKilled 가 아니다** — 종료 사유 `Completed`, exit 0. 메모리 한도도 설정돼 있지 않았다.
+
+[Day 5](day5-2026-09-29-registry-and-deploy.md) 에서 대시보드 probe 를 정하며 "liveness 를 조이면 멀쩡한 파드를 죽인다"고
+적었는데, 그 현상을 남이 만든 차트 기본값에서 봤다. CPU 를 VM 3대와 NAS 가 나눠 쓰니 순간적으로 느려졌을 수 있다(추측).
+마지막이 10-23 이고 그 뒤 멀쩡해서 지켜보기로. 재발하면 probe 타임아웃을 늘린다.
+
+**`--previous` 가 핵심이다.** 재시작된 파드의 현재 로그에는 죽기 직전 이야기가 없다.
+
+## ArgoCD 로그인
+
+### 초기 비밀번호
+
+```sh
+kubectl -n argocd get secret argocd-initial-admin-secret \
+  -o jsonpath='{.data.password}' | base64 -d; echo
+```
+
+`-o jsonpath` 의 경로는 `-o yaml` 로 본 구조 그대로. Secret 값은 base64 라 디코딩.
+끝의 `; echo` 는 비밀번호 뒤에 줄바꿈이 없어 프롬프트가 붙는 걸 막는다.
+
+### 밖에서 접속
+
+```sh
+ssh -J uuook@<외부IP>:<포트> uuook@192.168.45.4 -L 30443:10.23.218.234:30443
+```
+
+`-J` 로 맥미니(공유기 포트포워딩)를 거쳐 우분투로, `-L` 은 **명령을 친 노트북**의 30443 을 cp1:30443 으로.
+같은 세션에서 `multipass shell cp1` 로 들어가 비밀번호를 꺼냈다. `multipass exec cp1 -- ...` 로 한 줄에 하면
+jsonpath 따옴표가 여러 겹이 돼서 헷갈린다.
+
+### 로그인 후
+
+UI 의 User Info 에서 비밀번호 변경. 바뀐 건 `argocd-secret` 의 `admin.passwordMtime` 으로 확인된다.
+초기 Secret 은 이제 필요 없고, 남겨 두면 Secret 을 읽을 수 있는 누구나 admin 비밀번호를 알게 되므로 지운다.
