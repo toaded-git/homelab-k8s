@@ -2,3 +2,6 @@
 **/*secret*.yaml
 
 .DS_Store
+
+# 에디터 임시 파일
+*.swp

@@ -64,7 +64,8 @@
     - 읽을 저장소가 늘면 Gitea·Forgejo 의 저장소별 deploy key 로
   - [x] 저장소 등록 (2026-11-02): `ssh://uuook@192.168.45.4/home/uuook/git/homelab-k8s.git` + 개인키 + 호스트 키. 처음엔 GitHub URL 을 넣어 Failed
   - [x] 첫 Application `dashboard` (2026-11-02): `platform/dashboard` → `default`, Manual sync. 기존 리소스 adopt, 파드 재시작 없음
-  - [ ] git 수정 → push → OutOfSync 감지 → sync 로 반영 확인 ("git push 하면 배포" 첫 확인)
+  - [x] git 수정 → push → OutOfSync 감지 → sync (2026-11-11): `metadata.labels` 에 `managed-by: argocd`, 파드 재시작 없음
+  - [ ] 나머지도 ArgoCD 로: registry(`platform/registry`), local-path(`platform/storage`), Helm 차트들(traefik·argocd 자신)
   - [ ] 앱 health 가 **Progressing** — Ingress `status.loadBalancer` 가 비어서. MetalLB(정석) vs `ingressEndpoint`(우회), MetalLB 쪽으로 기움 (미확정)
   - [ ] `argocd-repo-server` liveness 실패 재시작: 10-23 까지 8회 → 11-11 에 10회. 계속되므로 probe 타임아웃 조정 필요
   - [ ] Traefik Ingress (`argocd.home`) 로 바꾸기 — `configs.params."server.insecure"` 필요

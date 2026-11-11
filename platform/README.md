@@ -3,8 +3,11 @@
 kubeadm 실습 클러스터(multipass VM `cp1`·`w1`·`w2`)에 올리는 매니페스트.
 NAS 층(Docker Compose)과 섞지 않는다.
 
-지금은 cp1 `/home/ubuntu/` 에서 직접 편집하고 `kubectl apply` 하는 중이라,
-여기 있는 파일은 **그 사본**이다. cp1 에서 고쳤으면 여기로 다시 가져올 것.
+**`dashboard/` 는 ArgoCD 가 관리한다 (2026-11-11~).** 여기서 고쳐 push 하면 ArgoCD 가 반영한다.
+cp1 에서 `kubectl apply` 하지 않는다 — 소유 표시(tracking-id)가 지워지고 git 과 어긋난다.
+
+나머지(registry·storage·traefik·argocd)는 아직 cp1 `/home/ubuntu/` 에서 고치고 `kubectl apply`·`helm upgrade` 한 뒤,
+여기로 다시 가져온다.
 
 ```sh
 # 맥의 저장소 루트에서. 따옴표 밖의 > 는 맥 쪽 셸이 처리한다
