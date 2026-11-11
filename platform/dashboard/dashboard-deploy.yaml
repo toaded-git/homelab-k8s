@@ -3,6 +3,7 @@ kind: Deployment
 metadata:
   labels:
     app: dashboard
+    managed-by: argocd
   name: dashboard
 spec:
   replicas: 1
