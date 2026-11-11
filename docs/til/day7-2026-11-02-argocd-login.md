@@ -10,6 +10,7 @@
 - ArgoCD UI 로그인 — 밖에서 SSH 점프 + 터널
 - admin 비밀번호 변경, 초기 Secret 삭제
 - ArgoCD 용 git 읽기 전용 SSH 키 — `authorized_keys` 로 제한 (한 번 틀리고 고침)
+- (오후) 저장소 등록 → 첫 Application `dashboard` → 기존 리소스를 재시작 없이 넘겨받음
 
 ## 방치된 클러스터 점검
 
@@ -143,8 +144,98 @@ vim 에서 4행 `J` 로 합쳐 고쳤다.
 push 를 실제로 해 보지 않고도 막혔는지 알 수 있다. 응답 첫 줄의 기능 목록(`multi_ack thin-pack ...`)은
 upload-pack(읽기) 것이다. receive-pack(쓰기)이었다면 `report-status`, `delete-refs` 가 보였을 것.
 
+## 저장소 등록 (오후)
+
+ArgoCD 에 줄 것 세 가지: 저장소 URL, 개인키, **호스트 키(known_hosts)**.
+
+### 호스트 키는 발급하는 게 아니라 가져오는 것
+
+sshd 설치 때 이미 만들어져 있다. 받아 오고, **원본과 지문을 대조**한다.
+
+```sh
+ssh-keyscan -t ed25519 192.168.45.4                                  # known_hosts 한 줄
+ssh-keyscan -t ed25519 192.168.45.4 2>/dev/null | ssh-keygen -lf -   # 받아 온 것의 지문
+ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub                     # 우분투에서, 원본 지문
+```
+
+`ssh-keyscan` 은 응답한 상대가 주는 키를 그냥 받아 올 뿐이라 대조가 필요하다.
+UI: Settings → Repository certificates and known hosts. 실제로는 ConfigMap `argocd-ssh-known-hosts-cm` 에 들어가고,
+GitHub·GitLab 등은 기본으로 들어 있다.
+
+### 첫 등록은 Failed — URL 이 GitHub 이었다
+
+```
+ssh: handshake failed: ssh: unable to authenticate, attempted methods [none publickey]
+```
+
+맥의 `git remote -v` 에서 `github` 쪽 주소를 가져다 넣었다. 방금 만든 키는 **우분투 `authorized_keys` 에만** 있으니
+GitHub 이 거부하는 게 맞다. 호스트 키는 정상이었다(지문 일치). 우분투 bare 로 다시 등록:
+
+```
+ssh://uuook@192.168.45.4/home/uuook/git/homelab-k8s.git
+```
+
+서버 쪽 `command=` 가 경로를 고정하므로 scp 형식이어도 동작은 같다. `ssh://` + 절대 경로가 읽기 쉽다.
+
+### UI 로 등록해도 결과는 Secret 하나
+
+```
+repo-2464379204   label: argocd.argoproj.io/secret-type=repository
+```
+
+ArgoCD 는 이 라벨이 붙은 Secret 을 "등록된 저장소"로 본다. 같은 Secret 을 YAML 로 `kubectl apply` 해도 된다 —
+나중에 ArgoCD 설정 자체를 선언형으로 관리할 때의 방식.
+
+## 첫 Application: `dashboard`
+
+| 칸 | 값 |
+|---|---|
+| Path | `platform/dashboard` |
+| Cluster URL | `https://kubernetes.default.svc` |
+| Namespace | `default` |
+| Sync Policy | **Manual** (Prune·Self Heal 끔) |
+
+### Cluster URL 과 Namespace
+
+Cluster URL 은 **API 서버 주소라 클러스터에 하나**, 네임스페이스는 그 안의 칸. DB 서버 URL 과 스키마 관계.
+다른 Cluster URL 은 다른 클러스터에 배포할 때만.
+
+`kubernetes.default.svc` 의 `default` 는 배포 대상이 아니다. API 서버도 클러스터 안에선 Service 하나이고,
+`<서비스>.<네임스페이스>.svc` 규칙으로 `default` 네임스페이스의 `kubernetes` Service 를 가리킬 뿐이다.
+
+### 만들자마자 OutOfSync — 내용은 같은데
+
+`kubectl diff -f`(서버 dry-run 비교, 아무것도 안 바꿈)로 저장소 파일 4개를 보니 **차이 없음**.
+손으로 apply 하고 되가져오는 방식이었는데도 어긋난 데가 없었다.
+
+OutOfSync 의 이유는 **소유 표시**였다. ArgoCD 는 관리하는 리소스에 어노테이션
+`argocd.argoproj.io/tracking-id` 를 붙인다. kubectl 로 만든 리소스엔 그게 없으니 "git 에 있는데 내 것은 없다".
+
+### Sync = 넘겨받기(adopt)
+
+```
+deployment.apps/dashboard configured     ← created 가 아니다
+```
+
+| | |
+|---|---|
+| tracking-id | `dashboard:apps/Deployment:default/dashboard` 붙음 |
+| 대시보드 파드 | AGE 34d 그대로 |
+| ReplicaSet 해시 | `665d87d486` 그대로 — 바뀐 건 `metadata` 뿐이라 롤아웃 없음 |
+
+[Day 6](day6-2026-09-30-cleanup-before-argocd.md) 의 "템플릿이 바뀌면 해시가 바뀐다"로 재시작 여부를 읽었다.
+
+### Synced 인데 health 는 Progressing
+
+ArgoCD 는 종류별 health 규칙이 있다. **Ingress 는 `status.loadBalancer.ingress` 가 채워져야 Healthy.**
+Day 6 에서 "동작에는 영향이 없어서 두었다"던 빈 ADDRESS 가 여기서 앱 전체 health 를 붙잡는다.
+실제 동작은 정상(`/api/health` 200).
+
+고치는 길은 두 가지 — Traefik 에 보고할 주소를 직접 주기(`ingressEndpoint`, 표시만 맞추는 우회) 또는
+MetalLB 로 진짜 LoadBalancer 를 만들기. MetalLB 쪽으로 기울어 있다.
+
 ### 다음
 
-ArgoCD 에 줄 것 세 가지: 저장소 URL, 개인키, **호스트 키(known_hosts)**. 마지막을 빠뜨리면 `knownhosts: key is unknown`.
-UI(Settings → Repositories)로 등록해 보고, 그 결과로 생긴 Secret 을 kubectl 로 들여다볼 예정.
+- git 을 바꿔 push → ArgoCD 가 OutOfSync 를 감지하는지 (기본 polling 3분) → sync
+- 이제 `platform/` 커밋은 **push 가 곧 배포**. push 규칙대로 사용자가 push 한다
 

@@ -62,9 +62,11 @@
   - [x] 초기 Secret `argocd-initial-admin-secret` 삭제 (2026-11-02)
   - [x] 저장소 접근 (2026-11-02): 전용 키 `~/argocd-repo-key`(우분투) + `authorized_keys` 에 `restrict,from="10.23.218.0/24",command="git-upload-pack <repo>"`. 읽기만 되고 셸·push·VM 밖 접속 거부 확인
     - 읽을 저장소가 늘면 Gitea·Forgejo 의 저장소별 deploy key 로
-  - [ ] ArgoCD 에 저장소 등록 (UI) — URL·개인키·**호스트 키(known_hosts)**
-  - [ ] 첫 Application: `platform/dashboard/` → sync → git 수정으로 반영 확인
-  - [ ] 관찰: `argocd-repo-server` liveness 실패로 8회 재시작 (마지막 10-23). 재발하면 probe 타임아웃 조정
+  - [x] 저장소 등록 (2026-11-02): `ssh://uuook@192.168.45.4/home/uuook/git/homelab-k8s.git` + 개인키 + 호스트 키. 처음엔 GitHub URL 을 넣어 Failed
+  - [x] 첫 Application `dashboard` (2026-11-02): `platform/dashboard` → `default`, Manual sync. 기존 리소스 adopt, 파드 재시작 없음
+  - [ ] git 수정 → push → OutOfSync 감지 → sync 로 반영 확인 ("git push 하면 배포" 첫 확인)
+  - [ ] 앱 health 가 **Progressing** — Ingress `status.loadBalancer` 가 비어서. MetalLB(정석) vs `ingressEndpoint`(우회), MetalLB 쪽으로 기움 (미확정)
+  - [ ] `argocd-repo-server` liveness 실패 재시작: 10-23 까지 8회 → 11-11 에 10회. 계속되므로 probe 타임아웃 조정 필요
   - [ ] Traefik Ingress (`argocd.home`) 로 바꾸기 — `configs.params."server.insecure"` 필요
   - 지금은 cp1 에서 매니페스트를 고치고 저장소로 되가져오는 수동 흐름. ArgoCD 가 이걸 대체한다
   - ArgoCD 는 클러스터 안에서 git 을 **당겨간다**. 외부에서 들어오는 길(웹훅)이 필요 없다
