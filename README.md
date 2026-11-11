@@ -75,7 +75,7 @@ docs/
 | Day 5 | [사설 레지스트리와 첫 배포](docs/til/day5-2026-09-29-registry-and-deploy.md) | containerd 2.x `certs.d`, CrashLoop 진단, 인그레스 |
 | Day 6 | [ArgoCD 전에 치울 것들](docs/til/day6-2026-09-30-cleanup-before-argocd.md) | `helm upgrade` 와 dry-run, 레지스트리 PVC, RWO, ArgoCD 설치 |
 | Day 7 | [한 달 만에 돌아와서](docs/til/day7-2026-11-02-argocd-login.md) | 방치된 클러스터 점검, liveness 가 죽인 repo-server, ArgoCD 로그인, git 읽기 전용 SSH 키 |
-| Day 8 | [git push 로 첫 배포](docs/til/day8-2026-11-11-first-gitops-deploy.md) | push → ArgoCD 감지 → sync, 라벨 위치와 롤아웃, cp1 apply 금지 |
+| Day 8 | [git push 로 첫 배포](docs/til/day8-2026-11-11-first-gitops-deploy.md) | push → ArgoCD 감지 → sync, 라벨 위치와 롤아웃, 로컬 Railway 와 입구 문제 |
 
 몇 가지 예:
 

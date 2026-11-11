@@ -66,7 +66,12 @@
   - [x] 첫 Application `dashboard` (2026-11-02): `platform/dashboard` → `default`, Manual sync. 기존 리소스 adopt, 파드 재시작 없음
   - [x] git 수정 → push → OutOfSync 감지 → sync (2026-11-11): `metadata.labels` 에 `managed-by: argocd`, 파드 재시작 없음
   - [ ] 나머지도 ArgoCD 로: registry(`platform/registry`), local-path(`platform/storage`), Helm 차트들(traefik·argocd 자신)
-  - [ ] 앱 health 가 **Progressing** — Ingress `status.loadBalancer` 가 비어서. MetalLB(정석) vs `ingressEndpoint`(우회), MetalLB 쪽으로 기움 (미확정)
+  - [ ] 앱 health 가 **Progressing** — Ingress `status.loadBalancer` 가 비어서. 입구 방식 결정에 따라 해결 (아래)
+- [ ] **LAN 입구 방식 결정 — 주말에 우분투 앞에서** (2026-11-11 논의, Day 8)
+  - 목표를 "로컬 Railway"(집 LAN + VPN)로 보면, 필요한 건 MetalLB 보다 **LAN 에서 닿는 입구 + `*.home` DNS**
+  - VM 이 multipass NAT 안이라 MetalLB IP 는 우분투에서만 닿는다. DHCP 가 .2~.254 전체라 빈 대역도 없음
+  - 후보: ① NAT 유지 + 우분투 80 → NodePort 넘김 ② VM bridged + MetalLB(집 LAN IP) ③ 우분투 본체 k3s
+  - ② 는 호스트 네트워크를 건드려 NAS 영향이 가장 큼 — `netplan try`, 고정 IP, Docker `FORWARD DROP` 주의
   - [ ] `argocd-repo-server` liveness 실패 재시작: 10-23 까지 8회 → 11-11 에 10회. 계속되므로 probe 타임아웃 조정 필요
   - [ ] Traefik Ingress (`argocd.home`) 로 바꾸기 — `configs.params."server.insecure"` 필요
   - 지금은 cp1 에서 매니페스트를 고치고 저장소로 되가져오는 수동 흐름. ArgoCD 가 이걸 대체한다
